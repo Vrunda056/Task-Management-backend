@@ -1,4 +1,4 @@
-# Studio backend
+# Task backend
 
 NestJS API using Prisma ORM 7 and PostgreSQL.
 
