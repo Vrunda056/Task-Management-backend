@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -12,11 +10,76 @@ datasource db {
   provider = "postgresql"
 }
 
+enum EntryType {
+  WORKING_DAY
+  WEEKEND
+  PUBLIC_HOLIDAY
+  PERSONAL_LEAVE
+}
+
+enum TaskItemStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  position  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String      @id @default(cuid())
+  name            String
+  email           String      @unique
+  position        String
+  sheetUrl        String?     // Master Google Sheet URL for this user
+  projects        Project[]   @relation("UserCreatedProjects")
+  dayEntries      DayEntry[]  // Relation to all daily logs, weekends, holidays
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdById String
+  createdBy   User     @relation("UserCreatedProjects", fields: [createdById], references: [id], onDelete: Cascade) // This column does not exist in your physical database table. It exists only in Prisma to represent the link between tables. It tells Prisma: "Whenever I ask for project.createdBy, go look up the User table where User.id == Project.createdById." 
+  tasks       Task[]   // A project can be associated with many daily tasks
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model DayEntry {
+  id        String    @id @default(cuid())
+  date      DateTime  @db.Date
+  entryType EntryType @default(WORKING_DAY)
+  label     String?   // e.g. "Saturday", "Sunday", "Diwali", "Casual Leave"
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks     Task[]    // Empty on weekends/holidays/leaves
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  @@unique([userId, date]) // Ensures a user can only have one entry per calendar date
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  taskName    String     // e.g. "Core Analytics Changes", "DEV server"
+  dayEntryId  String
+  dayEntry    DayEntry   @relation(fields: [dayEntryId], references: [id], onDelete: Cascade)
+  projectId   String
+  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  items       TaskItem[] // One task can have multiple descriptions/line items
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model TaskItem {
+  id               String         @id @default(cuid())
+  description      String         @db.Text
+  estimatedTimeMin Int?           // Nullable: for tasks with no initial estimation
+  actualEffortMin  Int?           // Nullable: filled once worked on
+  status           TaskItemStatus @default(PENDING)
+  note             String?        @db.Text // Delay explanation or notes
+  taskId           String
+  task             Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 }

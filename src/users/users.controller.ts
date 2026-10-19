@@ -41,8 +41,15 @@ export class UsersController {
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.NO_CONTENT)      // Set the HTTP status code to 204 No Content
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }
 }
+
+  // @HttpCode(HttpStatus.NO_CONTENT) overrides default 200 to 204
+   
+  //  WHY 204 (NO_CONTENT)?
+  //  - 200 OK         : Means "Deleted, and here is a response body (e.g. { success: true })"
+  //  - 204 No Content : The standard REST convention when an action succeeds and 
+  //                     intentionally sends back NO response body (saves network payload)

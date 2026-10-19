@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
+import type { NextFunction, Request, Response } from 'express';
 import { AppModule } from './app.module.js';
 
 async function bootstrap() {
@@ -12,6 +13,10 @@ async function bootstrap() {
   }
 
   app.setGlobalPrefix('api');
+  app.use((_request: Request, response: Response, next: NextFunction) => {
+    response.setHeader('Cache-Control', 'no-store');
+    next();
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
