@@ -9,15 +9,23 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import {
+  ApiBody,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { UsersService } from './users.service.js';
 
 @Controller('users')
+@ApiTags('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create a user' })
+  @ApiBody({ type: CreateUserDto })
   create(@Body() dto: CreateUserDto) {
     return this.usersService.create(dto);
   }
@@ -33,6 +41,8 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Update a user' })
+  @ApiBody({ type: UpdateUserDto })
   update(
     @Param('id') id: string,
     @Body() dto: UpdateUserDto,

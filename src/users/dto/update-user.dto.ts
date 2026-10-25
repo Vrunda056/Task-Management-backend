@@ -1,4 +1,5 @@
 import { Transform } from 'class-transformer';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEmail,
   IsNotEmpty,
@@ -8,6 +9,7 @@ import {
 } from 'class-validator';
 
 export class UpdateUserDto {
+  @ApiPropertyOptional({ example: 'Alex Morgan', maxLength: 100 })
   @Transform(({ value }) =>
     typeof value === 'string' ? value.trim() : value,
   )
@@ -17,6 +19,7 @@ export class UpdateUserDto {
   @MaxLength(100)
   name?: string;
 
+  @ApiPropertyOptional({ example: 'alex@studio.co', maxLength: 254 })
   @Transform(({ value }) =>
     typeof value === 'string' ? value.trim() : value,
   )
@@ -25,6 +28,7 @@ export class UpdateUserDto {
   @MaxLength(254)
   email?: string;
 
+  @ApiPropertyOptional({ example: 'Product Designer', maxLength: 100 })
   @Transform(({ value }) =>
     typeof value === 'string' ? value.trim() : value,
   )
