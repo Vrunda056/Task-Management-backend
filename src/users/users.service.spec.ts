@@ -55,7 +55,18 @@ describe('UsersService', () => {
     create.mockResolvedValue(user);
 
     await expect(service.create(input)).resolves.toEqual(user);
-    expect(create).toHaveBeenCalledWith({ data: input });
+    expect(create).toHaveBeenCalledWith({
+      data: input,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        position: true,
+        sheetUrl: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
   });
 
   it('converts a duplicate email into a conflict', async () => {
@@ -91,7 +102,18 @@ describe('UsersService', () => {
     findMany.mockResolvedValue([]);
 
     await expect(service.findAll()).resolves.toEqual([]);
-    expect(findMany).toHaveBeenCalledWith({ orderBy: { name: 'asc' } });
+    expect(findMany).toHaveBeenCalledWith({
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        position: true,
+        sheetUrl: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
   });
 
   it('returns a user by ID and reports missing users', async () => {
@@ -99,6 +121,18 @@ describe('UsersService', () => {
     findUnique.mockResolvedValueOnce(user).mockResolvedValueOnce(null);
 
     await expect(service.findOne('user-1')).resolves.toBe(user);
+    expect(findUnique).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        position: true,
+        sheetUrl: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
     await expect(service.findOne('missing')).rejects.toThrow('User not found.');
   });
 
@@ -112,6 +146,19 @@ describe('UsersService', () => {
     );
 
     await expect(service.update('user-1', { name: 'Ada' })).resolves.toBe(user);
+    expect(update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { name: 'Ada' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        position: true,
+        sheetUrl: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
     await expect(
       service.update('user-1', { email: 'taken@example.com' }),
     ).rejects.toBeInstanceOf(ConflictException);

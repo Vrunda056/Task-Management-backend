@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
+import { userProfileSelect } from './user-profile.select.js';
 
 @Injectable()
 export class UsersService {
@@ -15,7 +16,10 @@ export class UsersService {
 
   async create(data: CreateUserDto) {
     try {
-      return await this.prisma.user.create({ data });
+      return await this.prisma.user.create({
+        data,
+        select: userProfileSelect,
+      });
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -29,11 +33,17 @@ export class UsersService {
   }
 
   findAll() {
-    return this.prisma.user.findMany({ orderBy: { name: 'asc' } });
+    return this.prisma.user.findMany({
+      orderBy: { name: 'asc' },
+      select: userProfileSelect,
+    });
   }
 
   async findOne(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: userProfileSelect,
+    });
     if (!user) {
       throw new NotFoundException('User not found.');
     }
@@ -46,7 +56,11 @@ export class UsersService {
     }
 
     try {
-      return await this.prisma.user.update({ where: { id }, data });
+      return await this.prisma.user.update({
+        where: { id },
+        data,
+        select: userProfileSelect,
+      });
     } catch (error) {
       this.handleWriteError(error);
     }

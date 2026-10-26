@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'; 
 import type { NextFunction, Request, Response } from 'express';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module.js';
 
 async function bootstrap() {
@@ -15,6 +16,7 @@ async function bootstrap() {
   }
 
   app.setGlobalPrefix('api');
+  app.use(cookieParser());
 
   app.use((_request: Request, response: Response, next: NextFunction) => {
     response.setHeader('Cache-Control', 'no-store');
@@ -30,13 +32,18 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: config.get('FRONTEND_URL') ?? 'http://localhost:3000',
+    origin:
+      config.get('FRONTEND_URL') ??
+      ['http://localhost:3000', 'http://localhost:3002'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
   });
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Task Management API')
     .setDescription('API documentation for the Task Management Platform')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
 
   const swaggerDocument = SwaggerModule.createDocument(
