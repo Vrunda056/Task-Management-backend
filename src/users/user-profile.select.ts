@@ -5,6 +5,7 @@ export const userProfileSelect = {
   name: true,
   email: true,
   position: true,
+  role: true,
   sheetUrl: true,
   createdAt: true,
   updatedAt: true,

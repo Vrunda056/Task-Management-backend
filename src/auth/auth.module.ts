@@ -5,6 +5,7 @@ import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { AccessTokenService } from './services/access-token.service.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
+import { RolesGuard } from './guards/roles.guard.js';
 import { PasswordHasherService } from './services/password-hasher.service.js';
 import { RefreshSessionService } from './services/refresh-session.service.js';
 
@@ -19,6 +20,10 @@ import { RefreshSessionService } from './services/refresh-session.service.js';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

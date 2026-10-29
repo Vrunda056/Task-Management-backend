@@ -65,7 +65,10 @@ export class AuthService {
 
   async login(data: LoginDto) {
     const user = await this.validateCredentials(data.email, data.password);
-    const accessToken = await this.accessTokenService.issueAccessToken(user.id);
+    const accessToken = await this.accessTokenService.issueAccessToken(
+      user.id,
+      user.role,
+    );
     const refreshSession = await this.refreshSessionService.createSession(
       user.id,
     );
@@ -88,7 +91,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired refresh token.');
     }
 
-    const accessToken = await this.accessTokenService.issueAccessToken(user.id);
+    const accessToken = await this.accessTokenService.issueAccessToken(
+      user.id,
+      user.role,
+    );
     return {
       accessToken,
       user,

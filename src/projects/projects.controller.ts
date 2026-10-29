@@ -1,10 +1,13 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { UserRole } from '../generated/prisma/client.js';
+import { Roles } from '../auth/decorators/roles.decorator.js';
 import { ProjectsService } from './projects.service.js';
 import { CreateProjectDto } from './dto/create-project.dto.js';
 import { UpdateProjectDto } from './dto/update-project.dto.js';
 
 @Controller('projects')
+@Roles(UserRole.MANAGER)
 @ApiTags('projects')
 @ApiBearerAuth()
 export class ProjectsController {
@@ -18,11 +21,13 @@ export class ProjectsController {
   }
 
   @Get()
+  @Roles(UserRole.MANAGER, UserRole.DEVELOPER)
   findAll() {
     return this.projectsService.findAll();
   }
   
   @Get(':id')
+  @Roles(UserRole.MANAGER, UserRole.DEVELOPER)
   findOne(@Param('id') id: string) {
     return this.projectsService.findOne(id);
   }

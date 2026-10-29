@@ -1,12 +1,14 @@
 import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsEnum,
   IsEmail,
   IsNotEmpty,
   IsString,
   MaxLength,
   ValidateIf,
 } from 'class-validator';
+import { UserRole } from '../../generated/prisma/client.js';
 
 export class UpdateUserDto {
   @ApiPropertyOptional({ example: 'Alex Morgan', maxLength: 100 })
@@ -37,4 +39,9 @@ export class UpdateUserDto {
   @IsNotEmpty()
   @MaxLength(100)
   position?: string;
+
+  @ApiPropertyOptional({ enum: UserRole })
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsEnum(UserRole)
+  role?: UserRole;
 }

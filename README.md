@@ -50,6 +50,16 @@ Keep the generated value private and do not commit it. Tokens are signed, not
 encrypted. The frontend keeps the access token in memory, restores sessions
 from the refresh cookie on page load, and retries a protected request once
 after refreshing an expired access token. Logout revokes the refresh session
-and clears the cookie. The global guard requires a valid token for all routes
-except registration, login, refresh, and logout. Authorization by user
-ownership/roles is a later layer.
+and clears the cookie. The global guard requires a valid token for all routes except registration,
+login, refresh, and logout. A second global guard enforces role-based
+authorization. New users default to `DEVELOPER`, and public registration does
+not accept a role from the client. `MANAGER` can manage users and projects;
+`DEVELOPER` can read projects but cannot manage users or create, update, or
+delete projects. The role is included in the signed 15-minute access token, so
+a role change takes effect after the current token expires or is refreshed.
+
+To bootstrap the first manager in a local learning database, register the
+trusted account, run `npm run prisma:studio`, and change that account's `User`
+role to `MANAGER`. After that, a manager can change a user's role with
+`PATCH /api/users/:id` and a body such as `{ "role": "MANAGER" }` or
+`{ "role": "DEVELOPER" }`. Do not add a role field to public registration.

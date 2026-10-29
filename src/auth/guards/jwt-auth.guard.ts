@@ -8,11 +8,12 @@ import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
+import { UserRole } from '../../generated/prisma/client.js';
 import { getJwtSecret } from '../utils/jwt-secret.js';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
 
 export interface AuthenticatedRequest extends Request {
-  user?: { id: string };
+  user?: { id: string; role: UserRole };
 }
 
 @Injectable()
@@ -47,7 +48,7 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     const secret = getJwtSecret(this.configService);
-    let payload: { sub?: unknown; exp?: unknown };
+    let payload: { sub?: unknown; role?: unknown; exp?: unknown };
     try {
       payload = await this.jwtService.verifyAsync(token, { secret });
     } catch (error) {
@@ -66,12 +67,14 @@ export class JwtAuthGuard implements CanActivate {
     if (
       typeof payload.sub !== 'string' ||
       payload.sub.length === 0 ||
-      typeof payload.exp !== 'number'
+      typeof payload.exp !== 'number' ||
+      (payload.role !== UserRole.MANAGER &&
+        payload.role !== UserRole.DEVELOPER)
     ) {
       throw new UnauthorizedException('Invalid access token.');
     }
 
-    request.user = { id: payload.sub };
+    request.user = { id: payload.sub, role: payload.role };
     return true;
   }
 }

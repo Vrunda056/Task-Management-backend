@@ -15,11 +15,14 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import { UserRole } from '../generated/prisma/client.js';
+import { Roles } from '../auth/decorators/roles.decorator.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { UsersService } from './users.service.js';
 
 @Controller('users')
+@Roles(UserRole.MANAGER)
 @ApiTags('users')
 @ApiBearerAuth()
 export class UsersController {

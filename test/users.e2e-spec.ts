@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types.js';
 import { AppModule } from '../src/app.module.js';
 import { AccessTokenService } from '../src/auth/services/access-token.service.js';
+import { UserRole } from '../src/generated/prisma/client.js';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 
@@ -24,6 +25,7 @@ describe('UsersController (e2e)', () => {
       name: 'Ada Lovelace',
       email: 'ada@example.com',
       position: 'Engineer',
+      role: UserRole.DEVELOPER,
       createdAt,
       updatedAt,
     });
@@ -33,6 +35,7 @@ describe('UsersController (e2e)', () => {
       name: 'Ada Lovelace',
       email: 'ada@example.com',
       position: 'Engineer',
+      role: UserRole.DEVELOPER,
       createdAt,
       updatedAt,
     });
@@ -41,6 +44,7 @@ describe('UsersController (e2e)', () => {
       name: 'Ada Lovelace',
       email: 'ada@example.com',
       position: 'Engineer',
+      role: UserRole.DEVELOPER,
       createdAt,
       updatedAt,
     });
@@ -80,7 +84,7 @@ describe('UsersController (e2e)', () => {
     await app.init();
     const token = await app
       .get(AccessTokenService)
-      .issueAccessToken('user-1');
+      .issueAccessToken('user-1', UserRole.MANAGER);
     authorizationHeader = `Bearer ${token}`;
   });
 
@@ -104,6 +108,7 @@ describe('UsersController (e2e)', () => {
       name: 'Ada Lovelace',
       email: 'ada@example.com',
       position: 'Engineer',
+      role: UserRole.DEVELOPER,
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
     });
@@ -118,6 +123,7 @@ describe('UsersController (e2e)', () => {
         name: true,
         email: true,
         position: true,
+        role: true,
         sheetUrl: true,
         createdAt: true,
         updatedAt: true,
@@ -169,6 +175,7 @@ describe('UsersController (e2e)', () => {
         name: true,
         email: true,
         position: true,
+        role: true,
         sheetUrl: true,
         createdAt: true,
         updatedAt: true,
@@ -181,6 +188,60 @@ describe('UsersController (e2e)', () => {
         name: true,
         email: true,
         position: true,
+        role: true,
+        sheetUrl: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  });
+
+  it('forbids developers from accessing user management', async () => {
+    const developerToken = await app
+      .get(AccessTokenService)
+      .issueAccessToken('developer-1', UserRole.DEVELOPER);
+
+    await request(app.getHttpServer())
+      .get('/api/users')
+      .set('Authorization', `Bearer ${developerToken}`)
+      .expect(403);
+    await request(app.getHttpServer())
+      .patch('/api/users/user-1')
+      .set('Authorization', `Bearer ${developerToken}`)
+      .send({ role: UserRole.MANAGER })
+      .expect(403);
+
+    expect(findUsers).not.toHaveBeenCalled();
+    expect(updateUser).not.toHaveBeenCalled();
+  });
+
+  it('allows managers to assign a valid user role', async () => {
+    updateUser.mockResolvedValueOnce({
+      id: 'user-1',
+      name: 'Ada Lovelace',
+      email: 'ada@example.com',
+      position: 'Engineer',
+      role: UserRole.MANAGER,
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    });
+
+    const response = await request(app.getHttpServer())
+      .patch('/api/users/user-1')
+      .set('Authorization', authorizationHeader)
+      .send({ role: UserRole.MANAGER })
+      .expect(200);
+
+    expect(response.body.role).toBe(UserRole.MANAGER);
+    expect(updateUser).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { role: UserRole.MANAGER },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        position: true,
+        role: true,
         sheetUrl: true,
         createdAt: true,
         updatedAt: true,
@@ -207,6 +268,7 @@ describe('UsersController (e2e)', () => {
         name: true,
         email: true,
         position: true,
+        role: true,
         sheetUrl: true,
         createdAt: true,
         updatedAt: true,
@@ -225,6 +287,16 @@ describe('UsersController (e2e)', () => {
       .patch('/api/users/user-1')
       .set('Authorization', authorizationHeader)
       .send({ name: null })
+      .expect(400);
+
+    expect(updateUser).not.toHaveBeenCalled();
+  });
+
+  it('rejects role values outside the role enum', async () => {
+    await request(app.getHttpServer())
+      .patch('/api/users/user-1')
+      .set('Authorization', authorizationHeader)
+      .send({ role: 'ADMIN' })
       .expect(400);
 
     expect(updateUser).not.toHaveBeenCalled();

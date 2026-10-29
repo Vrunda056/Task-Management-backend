@@ -1,5 +1,6 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
@@ -27,6 +28,7 @@ describe('AuthController (e2e)', () => {
       name: 'Ada Lovelace',
       email: 'ada@example.com',
       position: 'Engineer',
+      role: 'DEVELOPER',
       sheetUrl: null,
       createdAt,
       updatedAt,
@@ -36,6 +38,7 @@ describe('AuthController (e2e)', () => {
       name: 'Ada Lovelace',
       email: 'ada@example.com',
       position: 'Engineer',
+      role: 'DEVELOPER',
       sheetUrl: null,
       createdAt,
       updatedAt,
@@ -99,6 +102,7 @@ describe('AuthController (e2e)', () => {
       name: 'Ada Lovelace',
       email: 'ada@example.com',
       position: 'Engineer',
+      role: 'DEVELOPER',
       sheetUrl: null,
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
@@ -115,11 +119,27 @@ describe('AuthController (e2e)', () => {
         name: true,
         email: true,
         position: true,
+        role: true,
         sheetUrl: true,
         createdAt: true,
         updatedAt: true,
       },
     });
+  });
+
+  it('rejects a client-supplied role during registration', async () => {
+    await request(app.getHttpServer())
+      .post('/api/auth/register')
+      .send({
+        name: 'Ada Lovelace',
+        email: 'ada@example.com',
+        position: 'Engineer',
+        password: 'a-secure-passphrase',
+        role: 'MANAGER',
+      })
+      .expect(400);
+
+    expect(createUser).not.toHaveBeenCalled();
   });
 
   it('rejects passwords shorter than 12 characters', async () => {
@@ -152,10 +172,16 @@ describe('AuthController (e2e)', () => {
         name: 'Ada Lovelace',
         email: 'ada@example.com',
         position: 'Engineer',
+        role: 'DEVELOPER',
         sheetUrl: null,
       },
     });
     expect(response.body.user).not.toHaveProperty('passwordHash');
+    await expect(
+      app.get(JwtService).verifyAsync(response.body.accessToken, {
+        secret: 'e2e-jwt-secret-with-more-than-32-bytes',
+      }),
+    ).resolves.toMatchObject({ sub: 'user-1', role: 'DEVELOPER' });
     const setCookie = response.headers['set-cookie']?.[0] ?? '';
     expect(setCookie).toContain('refresh_token=');
     expect(setCookie).toContain('HttpOnly');
@@ -177,6 +203,7 @@ describe('AuthController (e2e)', () => {
         name: true,
         email: true,
         position: true,
+        role: true,
         sheetUrl: true,
         createdAt: true,
         updatedAt: true,
@@ -213,6 +240,7 @@ describe('AuthController (e2e)', () => {
       name: 'Ada Lovelace',
       email: 'ada@example.com',
       position: 'Engineer',
+      role: 'DEVELOPER',
       sheetUrl: null,
       createdAt: new Date('2026-01-01T00:00:00.000Z'),
       updatedAt: new Date('2026-01-01T00:00:00.000Z'),
