@@ -4,6 +4,7 @@ import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UsersService } from './users.service.js';
+import { userProfileSelect } from './user-profile.select.js';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -57,15 +58,7 @@ describe('UsersService', () => {
     await expect(service.create(input)).resolves.toEqual(user);
     expect(create).toHaveBeenCalledWith({
       data: input,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        position: true,
-        sheetUrl: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: userProfileSelect,
     });
   });
 
@@ -104,15 +97,7 @@ describe('UsersService', () => {
     await expect(service.findAll()).resolves.toEqual([]);
     expect(findMany).toHaveBeenCalledWith({
       orderBy: { name: 'asc' },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        position: true,
-        sheetUrl: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: userProfileSelect,
     });
   });
 
@@ -123,15 +108,7 @@ describe('UsersService', () => {
     await expect(service.findOne('user-1')).resolves.toBe(user);
     expect(findUnique).toHaveBeenCalledWith({
       where: { id: 'user-1' },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        position: true,
-        sheetUrl: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: userProfileSelect,
     });
     await expect(service.findOne('missing')).rejects.toThrow('User not found.');
   });
@@ -149,19 +126,25 @@ describe('UsersService', () => {
     expect(update).toHaveBeenCalledWith({
       where: { id: 'user-1' },
       data: { name: 'Ada' },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        position: true,
-        sheetUrl: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: userProfileSelect,
     });
     await expect(
       service.update('user-1', { email: 'taken@example.com' }),
     ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('updates current user profile and normalizes empty sheetUrl', async () => {
+    const user = { id: 'user-1', name: 'Ada', sheetUrl: null };
+    update.mockResolvedValue(user);
+
+    await expect(
+      service.updateProfile('user-1', { name: 'Ada', sheetUrl: '' }),
+    ).resolves.toBe(user);
+    expect(update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { name: 'Ada', sheetUrl: null },
+      select: userProfileSelect,
+    });
   });
 
   it('rejects empty updates and reports delete not-found errors', async () => {

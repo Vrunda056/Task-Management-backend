@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
+import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { userProfileSelect } from './user-profile.select.js';
 
@@ -55,10 +56,36 @@ export class UsersService {
       throw new BadRequestException('At least one user field must be provided.');
     }
 
+    const payload = {
+      ...data,
+      ...(data.sheetUrl === '' ? { sheetUrl: null } : {}),
+    };
+
     try {
       return await this.prisma.user.update({
         where: { id },
-        data,
+        data: payload,
+        select: userProfileSelect,
+      });
+    } catch (error) {
+      this.handleWriteError(error);
+    }
+  }
+
+  async updateProfile(id: string, data: UpdateProfileDto) {
+    if (Object.values(data).every((value) => value === undefined)) {
+      throw new BadRequestException('At least one profile field must be provided.');
+    }
+
+    const payload = {
+      ...data,
+      ...(data.sheetUrl === '' ? { sheetUrl: null } : {}),
+    };
+
+    try {
+      return await this.prisma.user.update({
+        where: { id },
+        data: payload,
         select: userProfileSelect,
       });
     } catch (error) {

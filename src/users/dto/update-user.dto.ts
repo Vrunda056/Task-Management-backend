@@ -5,6 +5,7 @@ import {
   IsEmail,
   IsNotEmpty,
   IsString,
+  IsUrl,
   MaxLength,
   ValidateIf,
 } from 'class-validator';
@@ -44,4 +45,18 @@ export class UpdateUserDto {
   @ValidateIf((_object, value) => value !== undefined)
   @IsEnum(UserRole)
   role?: UserRole;
+
+  @ApiPropertyOptional({
+    example:
+      'https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit',
+  })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @ValidateIf((_object, value) => value !== undefined && value !== null && value !== '')
+  @IsUrl(
+    { require_protocol: true },
+    { message: 'sheetUrl must be a valid URL with protocol (e.g. https://...)' },
+  )
+  sheetUrl?: string | null;
 }

@@ -16,8 +16,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { UserRole } from '../generated/prisma/client.js';
+import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
+import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { UsersService } from './users.service.js';
 
@@ -38,6 +40,24 @@ export class UsersController {
   @Get()
   findAll() {
     return this.usersService.findAll();
+  }
+
+  @Get('me')
+  @Roles(UserRole.MANAGER, UserRole.DEVELOPER)
+  @ApiOperation({ summary: 'Get current user profile' })
+  getMe(@CurrentUser('id') userId: string) {
+    return this.usersService.findOne(userId);
+  }
+
+  @Patch('me')
+  @Roles(UserRole.MANAGER, UserRole.DEVELOPER)
+  @ApiOperation({ summary: 'Update current user profile' })
+  @ApiBody({ type: UpdateProfileDto })
+  updateMe(
+    @CurrentUser('id') userId: string,
+    @Body() dto: UpdateProfileDto,
+  ) {
+    return this.usersService.updateProfile(userId, dto);
   }
 
   @Get(':id')
